@@ -1,0 +1,59 @@
+{
+  "gasto_total_por_campaña": {
+    "20/21": 15664138.42,
+    "21/22": 21897493.6,
+    "22/23": 40323664.21,
+    "23/24": 32498578.78,
+    "24/25": 40788658.82,
+    "25/26": 36151000.04
+  },
+  "gasto_por_tipo_insumo": {
+    "Fertilizante": 71870985.14,
+    "Herbicida": 57403352.71,
+    "Semilla": 37625678.21,
+    "Aditivo": 5397623.7,
+    "Insecticida": 4640373.49,
+    "Fungicida": 4583658.53,
+    "Inoc/curasem": 3458296.49,
+    "Silobolsas": 2305432.34,
+    "Bactericidas": 15954.0,
+    "Biológico ": 13720.49,
+    "Combustibles": 8001.4,
+    "Alamb/Postes": 368.56,
+    "Balanceados": 88.8
+  },
+  "top_5_proveedores": [
+    {
+      "nombre": "LOS GROBO AGROPECUARIA SA",
+      "gasto": 45489339.88,
+      "porcentaje": 30.9
+    },
+    {
+      "nombre": "LARTIRIGOYEN Y CIA. S.A.",
+      "gasto": 44765604.18,
+      "porcentaje": 30.4
+    },
+    {
+      "nombre": "ENRIQUE M BAYA CASAL SA",
+      "gasto": 33769389.65,
+      "porcentaje": 22.9
+    },
+    {
+      "nombre": "RIZOBACTER ARGENTINA SA",
+      "gasto": 15895333.16,
+      "porcentaje": 10.8
+    },
+    {
+      "nombre": "AGRO BAYER S. R. L.",
+      "gasto": 7295624.29,
+      "porcentaje": 5.0
+    }
+  ],
+  "concentración_top_3": 84.2,
+  "promedio_mensual": 1890607.34,
+  "gasto_total_histórico": 147215291.16,
+  "meta": {
+    "fecha_actualización": "2026-04-13T18:49:26.560911",
+    "total_registros": 7462
+  }
+}
