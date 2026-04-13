@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inteligencia de Insumos | Espartina</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #0f766e;
+  --primary-light: #14b8a6;
+  --primary-bg: #f0fdfa;
+  --accent: #d97706;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --success: #16a34a;
+  --success-bg: #f0fdf4;
+  --warning: #d97706;
+  --warning-bg: #fffbeb;
+  --neutral: #64748b;
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --header-bg: #0f172a;
+  --radius: 10px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 6px rgba(0,0,0,.06), 0 2px 4px rgba(0,0,0,.04);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'DM Sans',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+.mono { font-family:'JetBrains Mono',monospace; }
+
+/* HEADER */
+header {
+  background: var(--header-bg);
+  color: #fff;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+header h1 span.icon {
+  background: var(--primary);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.header-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 20px;
+}
+.header-meta span { display:flex; align-items:center; gap:4px; }
+
+/* TABS */
+.tabs-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex;
+  gap: 0;
+  position: sticky;
+  top: 64px;
+  z-index: 99;
+}
+.tab-btn {
+  padding: 14px 24px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+/* LAYOUT */
+.page { display:none; padding: 28px 32px 60px; max-width:1440px; margin:0 auto; }
+.page.active { display:block; }
+
+/* FILTERS */
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+}
+.filter-bar .f-group { display:flex; flex-direction:column; gap:4px; min-width:170px; flex:1; }
+.filter-bar label { font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.6px; }
+.filter-bar select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.filter-bar select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(15,118,110,.1); }
+.btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+  background: var(--surface);
+  color: var(--text);
+}
+.btn:hover { background: var(--bg); }
+.btn-accent { background:var(--primary); color:#fff; border-color:var(--primary); }
+.btn-accent:hover { background:#0d6d65; }
+
+/* KPI CARDS */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+.kpi::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px;
+  height: 100%;
+}
+.kpi.kpi-green::before { background: var(--success); }
+.kpi.kpi-blue::before { background: var(--primary); }
+.kpi.kpi-amber::before { background: var(--accent); }
+.kpi.kpi-red::before { background: var(--danger); }
+.kpi-label { font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:6px; }
+.kpi-value { font-size:26px; font-weight:700; color:var(--text); letter-spacing:-.02em; }
+.kpi-sub { font-size:12px; color:var(--text-secondary); margin-top:4px; }
+
+/* CHARTS */
+.chart-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.chart-wrap h3 { font-size:14px; font-weight:600; margin-bottom:16px; color:var(--text); }
+.chart-box { position: relative; width:100%; }
+.chart-box.h300 { height:300px; }
+.chart-box.h350 { height:350px; }
+.chart-box.h400 { height:400px; }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+
+/* TABLES */
+.tbl-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.tbl-header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border); }
+.tbl-header h3 { font-size:14px; font-weight:600; }
+.tbl-header .tbl-actions { display:flex; gap:8px; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+thead th {
+  background: var(--bg);
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+}
+thead th:hover { color:var(--text); }
+tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover { background:var(--primary-bg); }
+.table-scroll { max-height:600px; overflow-y:auto; }
+
+/* BADGES */
+.badge {
+  display:inline-block;
+  padding:3px 8px;
+  border-radius:4px;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.3px;
+}
+.badge-up { background:var(--danger-bg); color:var(--danger); }
+.badge-down { background:var(--success-bg); color:var(--success); }
+.badge-flat { background:#f1f5f9; color:var(--neutral); }
+.badge-warn { background:var(--warning-bg); color:var(--warning); }
+.badge-ok { background:var(--success-bg); color:var(--success); }
+
+/* INFO BOX */
+.info-box {
+  background: var(--primary-bg);
+  border-left: 3px solid var(--primary);
+  padding: 12px 16px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+/* HEATMAP TABLE */
+.heatmap td.val { text-align:right; font-family:'JetBrains Mono',monospace; font-size:12px; }
+.hm-high { background:#fef2f2; color:#dc2626; }
+.hm-mid { background:#fffbeb; color:#d97706; }
+.hm-low { background:#f0fdf4; color:#16a34a; }
+.hm-none { background:#f8fafc; color:#cbd5e1; }
+
+/* PAGINATION */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.pagination .pg-btns { display:flex; gap:4px; }
+.pagination .pg-btns button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pagination .pg-btns button.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+/* RESPONSIVE */
+@media(max-width:900px) {
+  header { padding:0 16px; }
+  .tabs-bar { padding:0 16px; overflow-x:auto; }
+  .page { padding:16px; }
+  .grid-2 { grid-template-columns:1fr; }
+  .kpi-row { grid-template-columns:repeat(2,1fr); }
+  .kpi-value { font-size:20px; }
+}
+@media(max-width:600px) {
+  .kpi-row { grid-template-columns:1fr; }
+  .header-meta { display:none; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="icon">🌾</span> Inteligencia de Insumos</h1>
+  <div class="header-meta">
+    <span>Espartina S.A.</span>
+    <span>Actualizado: <span id="hdr-date">-</span></span>
+    <span><span id="hdr-records">-</span> registros</span>
+  </div>
+</header>
+
+<div class="tabs-bar">
+  <button class="tab-btn active" onclick="switchTab(0)">Panorama</button>
+  <button class="tab-btn" onclick="switchTab(1)">Por Insumo</button>
+  <button class="tab-btn" onclick="switchTab(2)">Proveedores</button>
+  <button class="tab-btn" onclick="switchTab(3)">Detalle</button>
+</div>
+
+<!-- ======================== TAB 0: PANORAMA ======================== -->
+<div class="page active" id="page-0">
+  <div class="filter-bar">
+    <div class="f-group"><label>Campaña</label><select id="f0-camp" onchange="renderPanorama()"><option value="">Todas</option></select></div>
+    <div class="f-group"><label>Tipo de Insumo</label><select id="f0-tipo" onchange="renderPanorama()"><option value="">Todos</option></select></div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi kpi-green"><div class="kpi-label">Gasto Total Histórico</div><div class="kpi-value mono" id="k0-total">-</div><div class="kpi-sub" id="k0-total-sub">-</div></div>
+    <div class="kpi kpi-blue"><div class="kpi-label">Promedio Mensual</div><div class="kpi-value mono" id="k0-avg">-</div><div class="kpi-sub">Últimos 25 meses</div></div>
+    <div class="kpi kpi-amber"><div class="kpi-label">Concentración Top 3</div><div class="kpi-value mono" id="k0-conc">-</div><div class="kpi-sub" id="k0-conc-sub">-</div></div>
+    <div class="kpi kpi-red"><div class="kpi-label">Total Órdenes</div><div class="kpi-value mono" id="k0-orders">-</div><div class="kpi-sub" id="k0-orders-sub">-</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-wrap">
+      <h3>Gasto por Campaña (USD)</h3>
+      <div class="chart-box h300"><canvas id="ch0-camps"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <h3>Distribución por Tipo de Insumo</h3>
+      <div class="chart-box h300"><canvas id="ch0-types"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <h3>Evolución Mensual de Gasto (últimos 25 meses)</h3>
+    <div class="chart-box h350"><canvas id="ch0-evol"></canvas></div>
+  </div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-header"><h3>Top Proveedores</h3></div>
+    <table><thead><tr><th>Proveedor</th><th>Gasto (USD)</th><th>Participación</th><th>Órdenes</th></tr></thead>
+    <tbody id="tb0-provs"></tbody></table>
+  </div>
+</div>
+
+<!-- ======================== TAB 1: POR INSUMO ======================== -->
+<div class="page" id="page-1">
+  <div class="filter-bar">
+    <div class="f-group"><label>Campaña</label><select id="f1-camp" onchange="renderInsumo()"><option value="">Todas</option></select></div>
+    <div class="f-group"><label>Tipo de Insumo</label><select id="f1-tipo" onchange="renderInsumo()"><option value="">Todos</option></select></div>
+    <div class="f-group" style="flex:0"><label>&nbsp;</label><button class="btn" onclick="exportTable('tb1-main','Insumos.xlsx')">⬇ Excel</button></div>
+  </div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-header"><h3>Ranking de Insumos por Gasto</h3><span style="font-size:12px;color:var(--text-muted)">Top 50</span></div>
+    <div class="table-scroll">
+    <table><thead><tr>
+      <th onclick="sortTbl('tb1-main',0)">Insumo</th>
+      <th onclick="sortTbl('tb1-main',1)">Tipo</th>
+      <th onclick="sortTbl('tb1-main',2)">Gasto Total (USD)</th>
+      <th onclick="sortTbl('tb1-main',3)">Precio Prom. Actual</th>
+      <th onclick="sortTbl('tb1-main',4)">Variación %</th>
+      <th>Tendencia</th>
+    </tr></thead>
+    <tbody id="tb1-main"></tbody></table>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <h3>Variación entre Campañas — Top 10 Insumos</h3>
+    <div class="info-box">Comparativa de gasto y precio promedio por campaña. <strong>Rojo</strong> = suba de precio, <strong>Verde</strong> = baja de precio.</div>
+    <div class="table-scroll">
+    <table class="heatmap"><thead><tr>
+      <th>Insumo</th><th>Tipo</th>
+      <th>20/21</th><th>21/22</th><th>22/23</th><th>23/24</th><th>24/25</th><th>25/26</th>
+      <th>Var. Precio %</th><th>Var. Volumen %</th>
+    </tr></thead>
+    <tbody id="tb1-heatmap"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== TAB 2: PROVEEDORES ======================== -->
+<div class="page" id="page-2">
+  <div class="filter-bar">
+    <div class="f-group"><label>Tipo de Insumo</label><select id="f2-tipo" onchange="renderProveedor()"><option value="">Todos</option></select></div>
+    <div class="f-group" style="flex:0"><label>&nbsp;</label><button class="btn" onclick="exportTable('tb2-main','Proveedores.xlsx')">⬇ Excel</button></div>
+  </div>
+
+  <div class="info-box">💰 <strong>Ahorro Potencial</strong> = diferencia porcentual entre el proveedor más caro y el más barato para cada insumo. Oportunidad directa de renegociación.</div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-header"><h3>Comparativa de Precios por Proveedor (Top 10 Insumos)</h3></div>
+    <div class="table-scroll">
+    <table><thead><tr>
+      <th>Insumo</th><th>Tipo</th>
+      <th>Proveedor Más Barato</th><th>Precio</th>
+      <th>Proveedor Más Caro</th><th>Precio</th>
+      <th>Ahorro %</th><th>Ahorro USD</th>
+    </tr></thead>
+    <tbody id="tb2-main"></tbody></table>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <h3>Gasto vs. Cantidad de Órdenes por Proveedor</h3>
+    <div class="chart-box h400"><canvas id="ch2-scatter"></canvas></div>
+  </div>
+</div>
+
+<!-- ======================== TAB 3: DETALLE ======================== -->
+<div class="page" id="page-3">
+  <div class="filter-bar">
+    <div class="f-group"><label>Campaña</label><select id="f3-camp" onchange="renderDetalle()"><option value="">Todas</option></select></div>
+    <div class="f-group"><label>Proveedor</label><select id="f3-prov" onchange="renderDetalle()"><option value="">Todos</option></select></div>
+    <div class="f-group"><label>Tipo de Insumo</label><select id="f3-tipo" onchange="renderDetalle()"><option value="">Todos</option></select></div>
+    <div class="f-group" style="flex:0;display:flex;gap:8px">
+      <div><label>&nbsp;</label><button class="btn" onclick="resetDetalle()">Limpiar</button></div>
+      <div><label>&nbsp;</label><button class="btn" onclick="exportDetalle()">⬇ Excel</button></div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-header"><h3>Todas las Órdenes de Compra</h3><span id="det-count" style="font-size:12px;color:var(--text-muted)"></span></div>
+    <div class="table-scroll" style="max-height:700px">
+    <table><thead><tr>
+      <th onclick="sortTbl('tb3-main',0)">Fecha</th>
+      <th onclick="sortTbl('tb3-main',1)">Campaña</th>
+      <th onclick="sortTbl('tb3-main',2)">Proveedor</th>
+      <th onclick="sortTbl('tb3-main',3)">Insumo</th>
+      <th onclick="sortTbl('tb3-main',4)">Tipo</th>
+      <th onclick="sortTbl('tb3-main',5)">Cantidad</th>
+      <th onclick="sortTbl('tb3-main',6)">P. Unit.</th>
+      <th onclick="sortTbl('tb3-main',7)">Total (USD)</th>
+      <th>Estado</th>
+    </tr></thead>
+    <tbody id="tb3-main"></tbody></table>
+    </div>
+    <div class="pagination">
+      <span id="det-info">-</span>
+      <div class="pg-btns" id="det-pages"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== EMBEDDED DATA ====================
+const DATA = '__BUNDLE_DATA__';
+const COMPRAS = '__COMPRAS_DATA__';
+
+// ==================== GLOBALS ====================
+const charts = {};
+let detPage = 0;
+const DET_PER_PAGE = 100;
+let detFiltered = COMPRAS;
+
+// ==================== INIT ====================
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('hdr-date').textContent = DATA.panorama.meta?.fecha_actualización?.slice(0,10) || '-';
+  document.getElementById('hdr-records').textContent = DATA.meta.total_records.toLocaleString('es-AR');
+  initFilters();
+  renderPanorama();
+  renderInsumo();
+  renderProveedor();
+  renderDetalle();
+});
+
+function initFilters() {
+  const camps = DATA.meta.campaigns;
+  const types = DATA.meta.types;
+  const provs = DATA.meta.providers;
+  const addOpts = (id, opts) => { const s=document.getElementById(id); opts.forEach(o => { const op=document.createElement('option'); op.value=o; op.text=o; s.appendChild(op); }); };
+  ['f0-camp','f1-camp','f3-camp'].forEach(id => addOpts(id, camps));
+  ['f0-tipo','f1-tipo','f2-tipo','f3-tipo'].forEach(id => addOpts(id, types));
+  addOpts('f3-prov', provs);
+}
+
+function switchTab(i) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+i).classList.add('active');
+  document.querySelectorAll('.tab-btn')[i].classList.add('active');
+}
+
+function fmt(v) { return '$' + Math.round(v).toLocaleString('es-AR'); }
+function fmtM(v) { return '$' + (v/1e6).toFixed(1) + 'M'; }
+function fmtDec(v) { return '$' + v.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function pct(v) { return v.toFixed(1) + '%'; }
+
+// ==================== TAB 0: PANORAMA ====================
+function renderPanorama() {
+  const p = DATA.panorama;
+  const campFilter = document.getElementById('f0-camp').value;
+
+  // KPIs
+  if (campFilter) {
+    document.getElementById('k0-total').textContent = fmtM(p.gasto_total_por_campaña[campFilter] || 0);
+    document.getElementById('k0-total-sub').textContent = 'Campaña ' + campFilter;
+  } else {
+    document.getElementById('k0-total').textContent = fmtM(p.gasto_total_histórico);
+    document.getElementById('k0-total-sub').textContent = '6 campañas (20/21 - 25/26)';
+  }
+  document.getElementById('k0-avg').textContent = fmtM(p.promedio_mensual);
+  document.getElementById('k0-conc').textContent = p.concentración_top_3 + '%';
+  document.getElementById('k0-conc-sub').textContent = p.top_5_proveedores.slice(0,3).map(x=>x.nombre.split(' ')[0]).join(', ');
+  document.getElementById('k0-orders').textContent = DATA.meta.total_records.toLocaleString('es-AR');
+  document.getElementById('k0-orders-sub').textContent = 'Oct 2019 - Mar 2026';
+
+  // Chart: Gasto por campaña
+  const cLabels = Object.keys(p.gasto_total_por_campaña).sort();
+  const cData = cLabels.map(c => p.gasto_total_por_campaña[c]);
+  if (charts.c0camps) charts.c0camps.destroy();
+  charts.c0camps = new Chart(document.getElementById('ch0-camps'), {
+    type: 'bar',
+    data: {
+      labels: cLabels,
+      datasets: [{
+        label: 'Gasto USD',
+        data: cData,
+        backgroundColor: cLabels.map(c => c === campFilter ? '#0f766e' : '#99f6e4'),
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: { legend:{display:false}, tooltip:{ callbacks:{ label: ctx => fmt(ctx.raw) } } },
+      scales: { y:{ beginAtZero:true, ticks:{ callback: v => fmtM(v) }, grid:{color:'#f1f5f9'} }, x:{grid:{display:false}} }
+    }
+  });
+
+  // Chart: Tipo de insumo
+  const tipoFilter = document.getElementById('f0-tipo').value;
+  let tLabels = Object.keys(p.gasto_por_tipo_insumo);
+  let tData = Object.values(p.gasto_por_tipo_insumo);
+  if (tipoFilter) { const i=tLabels.indexOf(tipoFilter); tLabels=[tLabels[i]]; tData=[tData[i]]; }
+  const palette = ['#0f766e','#0d9488','#14b8a6','#2dd4bf','#5eead4','#99f6e4','#d97706','#f59e0b','#fbbf24','#fcd34d','#a78bfa','#c4b5fd','#e9d5ff'];
+  if (charts.c0types) charts.c0types.destroy();
+  charts.c0types = new Chart(document.getElementById('ch0-types'), {
+    type: 'doughnut',
+    data: { labels:tLabels, datasets:[{ data:tData, backgroundColor:palette.slice(0,tLabels.length), borderWidth:2, borderColor:'#fff' }] },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: { legend:{ position:'right', labels:{font:{size:11},padding:8,usePointStyle:true,pointStyle:'circle'} }, tooltip:{ callbacks:{ label: ctx => ctx.label + ': ' + fmtM(ctx.raw) + ' (' + pct(ctx.raw/tData.reduce((a,b)=>a+b,0)*100) + ')' } } }
+    }
+  });
+
+  // Chart: Evolución mensual
+  const eData = DATA.evolucion.data;
+  if (charts.c0evol) charts.c0evol.destroy();
+  charts.c0evol = new Chart(document.getElementById('ch0-evol'), {
+    type: 'line',
+    data: {
+      labels: eData.map(d => d.mes),
+      datasets: [
+        { label:'Gasto USD', data:eData.map(d=>d.gasto_usd), borderColor:'#0f766e', backgroundColor:'rgba(15,118,110,.08)', fill:true, tension:.3, pointRadius:3, pointBackgroundColor:'#0f766e' },
+        { label:'Órdenes', data:eData.map(d=>d.órdenes), borderColor:'#d97706', backgroundColor:'transparent', tension:.3, pointRadius:2, pointBackgroundColor:'#d97706', yAxisID:'y1' }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: { legend:{ labels:{font:{size:11},usePointStyle:true,pointStyle:'circle'} }, tooltip:{ mode:'index', intersect:false, callbacks:{ label: ctx => ctx.dataset.label + ': ' + (ctx.datasetIndex===0?fmt(ctx.raw):ctx.raw) } } },
+      scales: {
+        y:{ beginAtZero:true, ticks:{ callback:v=>fmtM(v) }, grid:{color:'#f1f5f9'} },
+        y1:{ position:'right', beginAtZero:true, grid:{display:false}, ticks:{color:'#d97706'} },
+        x:{ grid:{display:false}, ticks:{font:{size:10},maxRotation:45} }
+      }
+    }
+  });
+
+  // Table: Top proveedores
+  const tb = document.getElementById('tb0-provs');
+  tb.innerHTML = '';
+  p.top_5_proveedores.forEach(pr => {
+    const ordenes = COMPRAS.filter(r => r[2] === pr.nombre).length;
+    tb.innerHTML += '<tr><td>'+pr.nombre+'</td><td class="mono">'+fmt(pr.gasto)+'</td><td><span class="badge badge-flat">'+pr.porcentaje+'%</span></td><td class="mono">'+ordenes+'</td></tr>';
+  });
+}
+
+// ==================== TAB 1: POR INSUMO ====================
+function renderInsumo() {
+  const campF = document.getElementById('f1-camp').value;
+  const tipoF = document.getElementById('f1-tipo').value;
+  let data = DATA.insumos;
+  if (tipoF) data = data.filter(r => r.tipo_insumo === tipoF);
+
+  // Sort by total or by campaign
+  if (campF) {
+    data = data.filter(r => r[campF] && r[campF] > 0);
+    data.sort((a,b) => (b[campF]||0) - (a[campF]||0));
+  } else {
+    data.sort((a,b) => (b.total_histórico||0) - (a.total_histórico||0));
+  }
+
+  const tb = document.getElementById('tb1-main');
+  tb.innerHTML = '';
+  data.slice(0,50).forEach(r => {
+    const gastoVal = campF ? (r[campF]||0) : (r.total_histórico||0);
+    const vPct = r['variación_porcentaje'] || 0;
+    const tend = r.tendencia || '→';
+    const badgeCls = vPct > 5 ? 'badge-up' : (vPct < -5 ? 'badge-down' : 'badge-flat');
+    tb.innerHTML += '<tr>' +
+      '<td title="'+r.insumo+'">'+r.insumo+'</td>' +
+      '<td>'+r.tipo_insumo+'</td>' +
+      '<td class="mono">'+fmt(gastoVal)+'</td>' +
+      '<td class="mono">'+(r.precio_promedio_actual ? fmtDec(r.precio_promedio_actual) : '—')+'</td>' +
+      '<td><span class="badge '+badgeCls+'">'+vPct.toFixed(1)+'%</span></td>' +
+      '<td style="font-size:18px">'+(vPct>0?'<span style="color:var(--danger)">↑</span>':(vPct<0?'<span style="color:var(--success)">↓</span>':'<span style="color:var(--neutral)">→</span>'))+'</td>' +
+    '</tr>';
+  });
+
+  // Heatmap: variación campañas top 10
+  const tbH = document.getElementById('tb1-heatmap');
+  tbH.innerHTML = '';
+  DATA.variacion.data.forEach(r => {
+    const camps = ['20/21','21/22','22/23','23/24','24/25','25/26'];
+    let row = '<tr><td>'+r.insumo+'</td><td>'+r.tipo_insumo+'</td>';
+    camps.forEach(c => {
+      const d = r.campañas[c];
+      if (d) {
+        row += '<td class="val" title="Vol: '+Math.round(d.volumen).toLocaleString('es-AR')+'">'+fmt(d.gasto)+'</td>';
+      } else {
+        row += '<td class="val hm-none">—</td>';
+      }
+    });
+    const vpClass = r.variación_precio_24_25_vs_25_26 > 10 ? 'hm-high' : (r.variación_precio_24_25_vs_25_26 < -10 ? 'hm-low' : 'hm-mid');
+    const vvClass = r.variación_volumen_24_25_vs_25_26 > 10 ? 'hm-low' : (r.variación_volumen_24_25_vs_25_26 < -10 ? 'hm-high' : 'hm-mid');
+    row += '<td class="val '+vpClass+'">'+r.variación_precio_24_25_vs_25_26.toFixed(1)+'%</td>';
+    row += '<td class="val '+vvClass+'">'+r.variación_volumen_24_25_vs_25_26.toFixed(1)+'%</td>';
+    row += '</tr>';
+    tbH.innerHTML += row;
+  });
+}
+
+// ==================== TAB 2: PROVEEDORES ====================
+function renderProveedor() {
+  const tipoF = document.getElementById('f2-tipo').value;
+  let data = DATA.proveedor.data;
+  if (tipoF) data = data.filter(r => r.tipo_insumo === tipoF);
+
+  const tb = document.getElementById('tb2-main');
+  tb.innerHTML = '';
+  data.forEach(r => {
+    const cheapest = r.proveedores[0];
+    const expensive = r.proveedores[r.proveedores.length - 1];
+    tb.innerHTML += '<tr>' +
+      '<td title="'+r.insumo+'">'+r.insumo+'</td>' +
+      '<td>'+r.tipo_insumo+'</td>' +
+      '<td style="color:var(--success);font-weight:600">'+cheapest.nombre+'</td>' +
+      '<td class="mono">'+fmtDec(cheapest.precio_promedio)+'</td>' +
+      '<td style="color:var(--danger);font-weight:600">'+expensive.nombre+'</td>' +
+      '<td class="mono">'+fmtDec(expensive.precio_promedio)+'</td>' +
+      '<td><span class="badge badge-warn">'+r.ahorro_potencial_porcentaje.toFixed(1)+'%</span></td>' +
+      '<td class="mono" style="font-weight:600">'+fmt(r.ahorro_potencial_usd)+'</td>' +
+    '</tr>';
+  });
+
+  // Scatter chart: gasto vs ordenes
+  const scatterData = DATA.panorama.top_5_proveedores.map(p => ({
+    x: p.gasto,
+    y: COMPRAS.filter(r => r[2] === p.nombre).length,
+    label: p.nombre.split(' ').slice(0,2).join(' ')
+  }));
+  if (charts.c2scatter) charts.c2scatter.destroy();
+  charts.c2scatter = new Chart(document.getElementById('ch2-scatter'), {
+    type: 'bubble',
+    data: {
+      datasets: scatterData.map((d,i) => ({
+        label: d.label,
+        data: [{ x:d.x, y:d.y, r: Math.max(8, d.y/30) }],
+        backgroundColor: palette2[i % palette2.length] + '99',
+        borderColor: palette2[i % palette2.length],
+        borderWidth: 2
+      }))
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: { legend:{ labels:{font:{size:11},usePointStyle:true} }, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': ' + fmtM(ctx.raw.x) + ' / ' + ctx.raw.y + ' órdenes' } } },
+      scales: {
+        x:{ title:{display:true,text:'Gasto Total (USD)',font:{size:12}}, ticks:{callback:v=>fmtM(v)}, grid:{color:'#f1f5f9'} },
+        y:{ title:{display:true,text:'Cantidad de Órdenes',font:{size:12}}, grid:{color:'#f1f5f9'} }
+      }
+    }
+  });
+}
+const palette2 = ['#0f766e','#d97706','#7c3aed','#dc2626','#2563eb'];
+
+// ==================== TAB 3: DETALLE ====================
+function renderDetalle() {
+  const campF = document.getElementById('f3-camp').value;
+  const provF = document.getElementById('f3-prov').value;
+  const tipoF = document.getElementById('f3-tipo').value;
+
+  detFiltered = COMPRAS;
+  if (campF) detFiltered = detFiltered.filter(r => r[1] === campF);
+  if (provF) detFiltered = detFiltered.filter(r => r[2] === provF);
+  if (tipoF) detFiltered = detFiltered.filter(r => r[4] === tipoF);
+
+  detPage = 0;
+  renderDetPage();
+}
+
+function renderDetPage() {
+  const total = detFiltered.length;
+  const start = detPage * DET_PER_PAGE;
+  const end = Math.min(start + DET_PER_PAGE, total);
+  const slice = detFiltered.slice(start, end);
+
+  document.getElementById('det-count').textContent = total.toLocaleString('es-AR') + ' registros';
+  document.getElementById('det-info').textContent = 'Mostrando ' + (start+1) + '-' + end + ' de ' + total.toLocaleString('es-AR');
+
+  const tb = document.getElementById('tb3-main');
+  tb.innerHTML = '';
+  slice.forEach(r => {
+    const estado = r[9] || '-';
+    const badgeCls = estado === 'Saldado' ? 'badge-ok' : 'badge-warn';
+    tb.innerHTML += '<tr>' +
+      '<td>'+r[0]+'</td><td>'+r[1]+'</td>' +
+      '<td title="'+r[2]+'">'+r[2]+'</td>' +
+      '<td title="'+r[3]+'">'+r[3]+'</td>' +
+      '<td>'+r[4]+'</td>' +
+      '<td class="mono">'+(r[5]!=null?r[5].toLocaleString('es-AR'):'-')+' '+(r[6]||'')+'</td>' +
+      '<td class="mono">'+fmtDec(r[7])+'</td>' +
+      '<td class="mono" style="font-weight:600">'+fmt(r[8])+'</td>' +
+      '<td><span class="badge '+badgeCls+'">'+estado+'</span></td>' +
+    '</tr>';
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(total / DET_PER_PAGE);
+  const pgDiv = document.getElementById('det-pages');
+  pgDiv.innerHTML = '';
+  if (totalPages <= 1) return;
+  const addPg = (label, page, active) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    if (active) b.className = 'active';
+    b.onclick = () => { detPage=page; renderDetPage(); };
+    pgDiv.appendChild(b);
+  };
+  if (detPage > 0) addPg('‹', detPage-1, false);
+  const startP = Math.max(0, detPage-3);
+  const endP = Math.min(totalPages, detPage+4);
+  for (let i=startP; i<endP; i++) addPg(i+1, i, i===detPage);
+  if (detPage < totalPages-1) addPg('›', detPage+1, false);
+}
+
+function resetDetalle() {
+  document.getElementById('f3-camp').value='';
+  document.getElementById('f3-prov').value='';
+  document.getElementById('f3-tipo').value='';
+  renderDetalle();
+}
+
+function exportDetalle() {
+  const headers = ['Fecha','Campaña','Proveedor','Insumo','Tipo','Cantidad','Unidad','Precio Unit.','Total USD','Estado'];
+  const rows = detFiltered.map(r => [r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9]]);
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Detalle');
+  XLSX.writeFile(wb, 'Detalle_Compras.xlsx');
+}
+
+// ==================== UTILITIES ====================
+function exportTable(tbId, filename) {
+  const table = document.getElementById(tbId).closest('table');
+  const ws = XLSX.utils.table_to_sheet(table);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data');
+  XLSX.writeFile(wb, filename);
+}
+
+let sortDirs = {};
+function sortTbl(tbId, col) {
+  const key = tbId+'-'+col;
+  sortDirs[key] = !sortDirs[key];
+  const dir = sortDirs[key] ? 1 : -1;
+  const tb = document.getElementById(tbId);
+  const rows = Array.from(tb.querySelectorAll('tr'));
+  rows.sort((a,b) => {
+    const av = a.cells[col]?.textContent||'';
+    const bv = b.cells[col]?.textContent||'';
+    const an = parseFloat(av.replace(/[^0-9.,-]/g,'').replace(',','.'));
+    const bn = parseFloat(bv.replace(/[^0-9.,-]/g,'').replace(',','.'));
+    if (!isNaN(an) && !isNaN(bn)) return (an-bn)*dir;
+    return av.localeCompare(bv)*dir;
+  });
+  rows.forEach(r => tb.appendChild(r));
+}
+</script>
+</body>
+</html>
